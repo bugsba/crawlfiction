@@ -4,11 +4,11 @@ import queue
 
 def getgbktext(url):
     r = requests.get(url)
-    r.encoding = 'gbk'
+    r.encoding = 'GB18030'
     return r.text
 
 def savetolocal(content,filename):
-    file_object = open(filename,'w')
+    file_object = open(filename,'w',encoding='utf-8')
     file_object.write(content)
     file_object.close()
 
@@ -21,17 +21,37 @@ def extracttab(regex,content):
 
 def getarticle(url):
     tempcontent = getgbktext(url)
-    tempregex = r'yd_text2"">(.*?)</div'
+#    print(tempcontent)
+    tempregex = r'h2>(.*)</h2'
     match = re.search(tempregex,tempcontent)
-    temp = match.group(1).replace('&nbsp;',' ')
-    return temp.replace('<br /><br />','\n')
+    title = match.group(1)
+    tempregex = r'cgSize\);\}</script>\s*(.*?)<{1,2}script'
+    match = re.search(tempregex,tempcontent,re.S)
 
-indexurl = 'http://www.bichi.me/read/349697.html'
-regexstr = r'td_con.+?href="(\S+)?"'
+    if(match):
+        temp = match.group(1).replace('&nbsp;',' ')
+        temp = temp.replace('<br /><br />','\n')
+        temp = temp.replace('</div>','')
+        temp = re.sub(r'<.*?>','',temp)
+#        print(title+'\n'+temp)
+        return(title+'\n'+temp)
+    else:
+        return(title+'\n'+temp)
+
+indexurl = 'http://www.xinshuzx.cn/wodedabaojian/'
+regexstr = r'li><a href="(/w\S+?)"'
 qurl=extracttab(regexstr,getgbktext(indexurl))
-preurl = "http://www.bichi.me"
+preurl = "http://www.xinshuzx.cn"
 temparticle = ''
+'''
+urlitem = qurl.get()
+urlitem = '/wodedabaojian/13147.html'
+temparticle = temparticle+getarticle(preurl+urlitem)
+savetolocal(temparticle,'我的大宝剑.txt')
+'''
 while not qurl.empty():
     urlitem = qurl.get()
+    print(preurl+urlitem)
     temparticle = temparticle+getarticle(preurl+urlitem)+'\n'
+ #   temparticle.encode(encoding='utf-8',errors= 'backslashreplace')
 savetolocal(temparticle,'我的大宝剑.txt')
